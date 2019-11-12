@@ -1003,7 +1003,7 @@ func (app *App) Fields() (map[string]*FieldInfo, error) {
 
 
 //Cursor 
-func (app *App) CreateCursor(fields []string, query string, size int64) (*AddCursorObj, err error) {
+func (app *App) CreateCursor(fields []string, query string, size int64) (*AddCursorObj, error) {
 	type request_body struct {
 		App    uint64   `json:"app,string"`
 		Fields []string `json:"fields"`
@@ -1017,33 +1017,32 @@ func (app *App) CreateCursor(fields []string, query string, size int64) (*AddCur
 	req, err := app.newRequest("POST", "records/cursor", bytes.NewReader(data))
 
 	if err != nil {
-		return
+		return nil, err
 	}
 	resp, err := app.do(req)
 	if err != nil {
-		return
+		return nil, err
 	}
 	body, err := parseResponse(resp)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	var t struct {
-		Id 			string 		`json:"id"`
+		Id 			uint64 		`json:"id"`
 		TotalCount	int64		`json:"totalCount"`
 	}
-	if json.Unmarshal(body, &AddCursorObj) != nil {
+	if json.Unmarshal(body, &t) != nil {
 		err = ErrInvalidResponse
-		return
+		return nil, err
 	}
 	
 	return &AddCursorObj{t.Id, t.TotalCount}, nil
 }
 
-func (app *App) GetCursor(id string) (*GetCursorObj, err error) {
+func (app *App) GetCursor(id string) (*GetCursorObj, error) {
 	type request_body struct {
-		// App		uint64		`json:"app,string"`
-		Id		uint64		`json:"id,string"`
+		Id		string		`json:"id,string"`
 	}
 	data, _ := json.Marshal(request_body{id})
 	req, err := app.newRequest("GET", "records/cursor", bytes.NewReader(data))
@@ -1062,10 +1061,10 @@ func (app *App) GetCursor(id string) (*GetCursorObj, err error) {
 	if err != nil {
 		return nil, ErrInvalidResponse
 	}
-	return recs, nil
+	return &GetCursorObj{recs, false}, nil
 }
 
-func (app *App) DeleteRecords(id uint64) error {
+func (app *App) DeleteCursor(id uint64) error {
 	type request_body struct {
 		Id		uint64		`json:"id,string"`
 	}
@@ -1079,5 +1078,5 @@ func (app *App) DeleteRecords(id uint64) error {
 		return err
 	}
 	_, err = parseResponse(resp)
-	return nil, err
+	return err
 }
