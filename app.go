@@ -1037,7 +1037,7 @@ func (app *App) CreateCursor(fields []string, query string, size int64) (*AddCur
 		return nil, err
 	}
 	
-	return &AddCursorObj{t.Id, t.TotalCount}, nil
+	return &AddCursorObj{Id: t.Id, TotalCount: t.TotalCount}, nil
 }
 
 func (app *App) GetCursor(id string) (*GetCursorObj, error) {
@@ -1061,7 +1061,7 @@ func (app *App) GetCursor(id string) (*GetCursorObj, error) {
 	if err != nil {
 		return nil, ErrInvalidResponse
 	}
-	return &GetCursorObj{recs, false}, nil
+	return &GetCursorObj{Records: recs, Next: false}, nil
 }
 
 func (app *App) DeleteCursor(id uint64) error {
