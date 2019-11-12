@@ -1000,3 +1000,84 @@ func (app *App) Fields() (map[string]*FieldInfo, error) {
 	}
 	return ret, nil
 }
+
+
+//Cursor 
+func (app *App) CreateCursor(fields []string, query string, size int64) (*AddCursorObj, err error) {
+	type request_body struct {
+		App    uint64   `json:"app,string"`
+		Fields []string `json:"fields"`
+		Query  string   `json:"query"`
+		Size	int64	`json:"size"`
+	}
+	if size > 500 {
+		return nil, ErrTooMany
+	}
+	data, _ := json.Marshal(request_body{app.AppId, fields, query, size})
+	req, err := app.newRequest("POST", "records/cursor", bytes.NewReader(data))
+
+	if err != nil {
+		return
+	}
+	resp, err := app.do(req)
+	if err != nil {
+		return
+	}
+	body, err := parseResponse(resp)
+	if err != nil {
+		return
+	}
+
+	var t struct {
+		Id 			string 		`json:"id"`
+		TotalCount	int64		`json:"totalCount"`
+	}
+	if json.Unmarshal(body, &AddCursorObj) != nil {
+		err = ErrInvalidResponse
+		return
+	}
+	
+	return &AddCursorObj{t.Id, t.TotalCount}, nil
+}
+
+func (app *App) GetCursor(id string) (*GetCursorObj, err error) {
+	type request_body struct {
+		// App		uint64		`json:"app,string"`
+		Id		uint64		`json:"id,string"`
+	}
+	data, _ := json.Marshal(request_body{id})
+	req, err := app.newRequest("GET", "records/cursor", bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	resp, err := app.do(req)
+	if err != nil {
+		return nil, err
+	}
+	body, err := parseResponse(resp)
+	if err != nil {
+		return nil, err
+	}
+	recs, err := DecodeRecords(body)
+	if err != nil {
+		return nil, ErrInvalidResponse
+	}
+	return recs, nil
+}
+
+func (app *App) DeleteRecords(id uint64) error {
+	type request_body struct {
+		Id		uint64		`json:"id,string"`
+	}
+	data, _ := json.Marshal(request_body{id})
+	req, err := app.newRequest("DELETE", "records/cursor", bytes.NewReader(data))
+	if err != nil {
+		return err
+	}
+	resp, err := app.do(req)
+	if err != nil {
+		return err
+	}
+	_, err = parseResponse(resp)
+	return nil, err
+}
