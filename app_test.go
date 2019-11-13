@@ -250,3 +250,48 @@ func TestDeleteComment(t *testing.T) {
 		t.Logf("The comment with id =  %v has been deleted successefully!", cmtID)
 	}
 }
+
+
+func TestAddCursor(t *testing.T) {
+	a := newApp(9004)
+	if len(a.Password) == 0 {
+		t.Skip()
+	}
+	q := ""
+	var fields []string
+	fields[0] = "$id"
+
+	cursor, err := a.CreateCursor(fields, q, 100)
+	if err != nil {
+		t.Error("AddCursor failed", err)
+	} else {
+		t.Log(cursor)
+	}
+}
+
+func TestGetCursor(t *testing.T) {
+	a := newApp(9004)
+	if len(a.Password) == 0 {
+		t.Skip()
+	}
+	id := "1e17a1dc-65d3-4291-8c44-c0c35786656b"
+
+	cursor, err := a.GetCursor(id)
+	if err != nil {
+		t.Error("GetCursor failed", err)
+	} else {
+		t.Log(cursor)
+	}
+}
+
+func TestDeleteCursor(t *testing.T) {
+	a := newApp(9004)
+	if len(a.Password) == 0 {
+		t.Skip()
+	}
+
+	id := "1e17a1dc-65d3-4291-8c44-c0c35786656b"
+	if err := a.DeleteCursor(id); err != nil {
+		t.Error("DeleteCursor failed", err)
+	}
+}
