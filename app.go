@@ -21,6 +21,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"strconv"
 )
 
 const (
@@ -1029,22 +1030,22 @@ func (app *App) CreateCursor(fields []string, query string, size int64) (*AddCur
 	}
 
 	var t struct {
-		Id 			uint64 		`json:"id"`
-		TotalCount	int64		`json:"totalCount"`
+		Id 			string 		`json:"id"`
+		TotalCount	string		`json:"totalCount"`
 	}
 	if json.Unmarshal(body, &t) != nil {
 		err = ErrInvalidResponse
 		return nil, err
 	}
-	
-	return &AddCursorObj{Id: t.Id, TotalCount: t.TotalCount}, nil
+	n, err := strconv.ParseInt(t.TotalCount, 10, 64)
+	return &AddCursorObj{Id: t.Id, TotalCount: n}, nil
 }
 
 func (app *App) GetCursor(id string) (*GetCursorObj, error) {
 	type request_body struct {
 		Id		string		`json:"id,string"`
 	}
-	data, _ := json.Marshal(request_body{id})
+	data, _ := json.Marshal(request_body{Id: id})
 	req, err := app.newRequest("GET", "records/cursor", bytes.NewReader(data))
 	if err != nil {
 		return nil, err
@@ -1057,18 +1058,22 @@ func (app *App) GetCursor(id string) (*GetCursorObj, error) {
 	if err != nil {
 		return nil, err
 	}
-	recs, err := DecodeRecords(body)
-	if err != nil {
-		return nil, ErrInvalidResponse
+	var t struct {
+		Records		[]*Record 	`json:"records"`
+		Next		bool		`json:"next"`
 	}
-	return &GetCursorObj{Records: recs, Next: false}, nil
+	if json.Unmarshal(body, &t) != nil {
+		err = ErrInvalidResponse
+		return nil, err
+	}
+	return &GetCursorObj{Records: t.Records, Next: t.Next}, nil
 }
 
-func (app *App) DeleteCursor(id uint64) error {
+func (app *App) DeleteCursor(id string) error {
 	type request_body struct {
-		Id		uint64		`json:"id,string"`
+		Id		string		`json:"id,string"`
 	}
-	data, _ := json.Marshal(request_body{id})
+	data, _ := json.Marshal(request_body{Id: id})
 	req, err := app.newRequest("DELETE", "records/cursor", bytes.NewReader(data))
 	if err != nil {
 		return err
